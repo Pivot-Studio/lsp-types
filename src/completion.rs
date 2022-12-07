@@ -397,7 +397,7 @@ pub struct CompletionList {
     pub items: Vec<CompletionItem>,
 }
 
-#[derive(Debug, PartialEq, Default, Deserialize, Serialize, Clone)]
+#[derive(Debug, Eq, PartialEq, Default, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CompletionItem {
     /// The label of this completion item. By default
@@ -539,7 +539,7 @@ impl CompletionItem {
 ///
 /// @since 3.17.0 - proposed state
 #[cfg(feature = "proposed")]
-#[derive(Debug, PartialEq, Default, Deserialize, Serialize, Clone)]
+#[derive(Debug, Eq, PartialEq, Default, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CompletionItemLabelDetails {
     /// An optional string which is rendered less prominently directly after
