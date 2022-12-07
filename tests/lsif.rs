@@ -10,7 +10,9 @@ fn run() {
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(&x).unwrap(),
             serde_json::from_str::<serde_json::Value>(json).unwrap(),
-            "and strings:\ntheir: {}\n  our: {}", json, x,
+            "and strings:\ntheir: {}\n  our: {}",
+            json,
+            x,
         );
     }
 }

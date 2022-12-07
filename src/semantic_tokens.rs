@@ -379,7 +379,6 @@ pub struct SemanticTokensClientCapabilities {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub server_cancel_support: Option<bool>,
 
-
     /// Whether the client uses semantic tokens to augment existing
     /// syntax tokens. If set to `true` client side created syntax
     /// tokens and semantic tokens are both used for colorization. If

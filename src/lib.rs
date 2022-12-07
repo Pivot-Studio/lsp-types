@@ -484,7 +484,7 @@ impl DiagnosticTag {
 /// Represents a reference to a command. Provides a title which will be used to represent a command in the UI.
 /// Commands are identitifed using a string identifier and the protocol currently doesn't specify a set of
 /// well known commands. So executing a command requires some tool extension code.
-#[derive(Debug, PartialEq, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
 pub struct Command {
     /// Title of the command, like `save`.
     pub title: String,
