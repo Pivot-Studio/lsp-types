@@ -226,7 +226,9 @@ pub type LSPArray = Vec<serde_json::Value>;
 
 /// Position in a text document expressed as zero-based line and character offset.
 /// A position is between two characters like an 'insert' cursor in a editor.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Deserialize, Serialize)]
+#[derive(
+    Debug, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Deserialize, Serialize,
+)]
 pub struct Position {
     /// Line position in a document (zero-based).
     pub line: u32,
@@ -246,7 +248,7 @@ impl Position {
 
 /// A range in a text document expressed as (zero-based) start and end positions.
 /// A range is comparable to a selection in an editor. Therefore the end position is exclusive.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone, Default, Deserialize, Serialize)]
 pub struct Range {
     /// The range's start position.
     pub start: Position,
@@ -261,7 +263,7 @@ impl Range {
 }
 
 /// Represents a location inside a resource, such as a line inside a text file.
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Deserialize, Serialize)]
 pub struct Location {
     pub uri: Url,
     pub range: Range,
