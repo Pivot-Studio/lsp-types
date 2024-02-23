@@ -10,7 +10,8 @@ use crate::{
 /// A set of predefined token types. This set is not fixed
 /// and clients can specify additional token types via the
 /// corresponding client capabilities.
-/// since @3.16.0
+///
+/// @since 3.16.0
 #[derive(Debug, Eq, PartialEq, Hash, PartialOrd, Clone, Deserialize, Serialize)]
 pub struct SemanticTokenType(Cow<'static, str>);
 
@@ -38,8 +39,7 @@ impl SemanticTokenType {
     pub const REGEXP: SemanticTokenType = SemanticTokenType::new("regexp");
     pub const OPERATOR: SemanticTokenType = SemanticTokenType::new("operator");
 
-    /// since @3.17.0
-    #[cfg(feature = "proposed")]
+    /// @since 3.17.0
     pub const DECORATOR: SemanticTokenType = SemanticTokenType::new("decorator");
 
     pub const fn new(tag: &'static str) -> Self {
@@ -142,9 +142,7 @@ pub struct SemanticTokensLegend {
     pub token_modifiers: Vec<SemanticTokenModifier>,
 }
 
-/// The actual tokens. For a detailed description about how the data is
-/// structured please see
-/// <https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71>
+/// The actual tokens.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
 pub struct SemanticToken {
     pub delta_line: u32,
@@ -374,8 +372,7 @@ pub struct SemanticTokensClientCapabilities {
     /// ErrorCodes.ServerCancelled. If a server does the client
     /// needs to retrigger the request.
     ///
-    /// since @3.17.0
-    #[cfg(feature = "proposed")]
+    /// @since 3.17.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub server_cancel_support: Option<bool>,
 
@@ -389,7 +386,6 @@ pub struct SemanticTokensClientCapabilities {
     /// specified.
     ///
     /// @since 3.17.0
-    #[cfg(feature = "proposed")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub augments_syntax_tokens: Option<bool>,
 }
@@ -429,7 +425,7 @@ pub struct SemanticTokensOptions {
     /// The legend used by the server
     pub legend: SemanticTokensLegend,
 
-    /// Server supports providing semantic tokens for a sepcific range
+    /// Server supports providing semantic tokens for a specific range
     /// of a document.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub range: Option<bool>,
@@ -511,7 +507,7 @@ pub struct SemanticTokensDeltaParams {
     pub text_document: TextDocumentIdentifier,
 
     /// The result id of a previous response. The result Id can either point to a full response
-    /// or a delta response depending on what was recevied last.
+    /// or a delta response depending on what was received last.
     pub previous_result_id: String,
 }
 

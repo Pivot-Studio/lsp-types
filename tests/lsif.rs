@@ -1,8 +1,8 @@
-use lsp_types::lsif::Entry;
-
 #[test]
 #[cfg(unix)]
 fn run() {
+    use lsp_types::lsif::Entry;
+
     let jsonl = include_str!("tsc-unix.lsif");
     for json in jsonl.lines() {
         let r = serde_json::from_str::<Entry>(&json).expect(&format!("can not parse {}", json));

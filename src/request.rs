@@ -3,8 +3,8 @@ use super::*;
 use serde::{de::DeserializeOwned, Serialize};
 
 pub trait Request {
-    type Params: DeserializeOwned + Serialize;
-    type Result: DeserializeOwned + Serialize;
+    type Params: DeserializeOwned + Serialize + Send + Sync + 'static;
+    type Result: DeserializeOwned + Serialize + Send + Sync + 'static;
     const METHOD: &'static str;
 }
 
@@ -29,7 +29,10 @@ macro_rules! lsp_request {
     };
 
     ("workspace/symbol") => {
-        $crate::request::WorkspaceSymbol
+        $crate::request::WorkspaceSymbolRequest
+    };
+    ("workspaceSymbol/resolve") => {
+        $crate::request::WorkspaceSymbolResolve
     };
     ("workspace/executeCommand") => {
         $crate::request::ExecuteCommand
@@ -141,6 +144,9 @@ macro_rules! lsp_request {
     ("textDocument/prepareCallHierarchy") => {
         $crate::request::CallHierarchyPrepare
     };
+    ("textDocument/prepareTypeHierarchy") => {
+        $crate::request::TypeHierarchyPrepare
+    };
     ("textDocument/semanticTokens/full") => {
         $crate::request::SemanticTokensFullRequest
     };
@@ -149,6 +155,27 @@ macro_rules! lsp_request {
     };
     ("textDocument/semanticTokens/range") => {
         $crate::request::SemanticTokensRangeRequest
+    };
+    ("textDocument/inlayHint") => {
+        $crate::request::InlayHintRequest
+    };
+    ("textDocument/inlineValue") => {
+        $crate::request::InlineValueRequest
+    };
+    ("textDocument/diagnostic") => {
+        $crate::request::DocumentDiagnosticRequest
+    };
+    ("workspace/diagnostic") => {
+        $crate::request::WorkspaceDiagnosticRequest
+    };
+    ("workspace/diagnostic/refresh") => {
+        $crate::request::WorkspaceDiagnosticRefresh
+    };
+    ("typeHierarchy/supertypes") => {
+        $crate::request::TypeHierarchySupertypes
+    };
+    ("typeHierarchy/subtypes") => {
+        $crate::request::TypeHierarchySubtypes
     };
     ("workspace/willCreateFiles") => {
         $crate::request::WillCreateFiles
@@ -165,8 +192,17 @@ macro_rules! lsp_request {
     ("workspace/codeLens/refresh") => {
         $crate::request::CodeLensRefresh
     };
+    ("workspace/inlayHint/refresh") => {
+        $crate::request::InlayHintRefreshRequest
+    };
+    ("workspace/inlineValue/refresh") => {
+        $crate::request::InlineValueRefreshRequest
+    };
     ("codeAction/resolve") => {
         $crate::request::CodeActionResolveRequest
+    };
+    ("inlayHint/resolve") => {
+        $crate::request::InlayHintResolveRequest
     };
     ("window/showDocument") => {
         $crate::request::ShowDocument
@@ -380,12 +416,23 @@ impl Request for DocumentSymbolRequest {
 /// The workspace symbol request is sent from the client to the server to list project-wide symbols
 /// matching the query string.
 #[derive(Debug)]
-pub enum WorkspaceSymbol {}
+pub enum WorkspaceSymbolRequest {}
 
-impl Request for WorkspaceSymbol {
+impl Request for WorkspaceSymbolRequest {
     type Params = WorkspaceSymbolParams;
-    type Result = Option<Vec<SymbolInformation>>;
+    type Result = Option<WorkspaceSymbolResponse>;
     const METHOD: &'static str = "workspace/symbol";
+}
+
+/// The `workspaceSymbol/resolve` request is sent from the client to the server to resolve
+/// additional information for a given workspace symbol.
+#[derive(Debug)]
+pub enum WorkspaceSymbolResolve {}
+
+impl Request for WorkspaceSymbolResolve {
+    type Params = WorkspaceSymbol;
+    type Result = WorkspaceSymbol;
+    const METHOD: &'static str = "workspaceSymbol/resolve";
 }
 
 /// The workspace/executeCommand request is sent from the client to the server to trigger command execution on the server.
@@ -463,7 +510,7 @@ impl Request for CodeActionRequest {
 /// This is usually used to compute the `edit` property of a code action to avoid its unnecessary computation
 /// during the `textDocument/codeAction` request.
 ///
-/// since 3.16.0
+/// @since 3.16.0
 #[derive(Debug)]
 pub enum CodeActionResolveRequest {}
 
@@ -613,6 +660,17 @@ impl Request for PrepareRenameRequest {
     const METHOD: &'static str = "textDocument/prepareRename";
 }
 
+#[derive(Debug)]
+#[cfg(feature = "proposed")]
+pub enum InlineCompletionRequest {}
+
+#[cfg(feature = "proposed")]
+impl Request for InlineCompletionRequest {
+    type Params = InlineCompletionParams;
+    type Result = Option<InlineCompletionResponse>;
+    const METHOD: &'static str = "textDocument/inlineCompletion";
+}
+
 /// The workspace/workspaceFolders request is sent from the server to the client to fetch the current open list of
 /// workspace folders. Returns null in the response if only a single file is open in the tool.
 /// Returns an empty array if a workspace is open but no folders are configured.
@@ -626,7 +684,7 @@ impl Request for WorkspaceFoldersRequest {
 }
 
 /// The `window/workDoneProgress/create` request is sent from the server
-/// to the clientto ask the client to create a work done progress.
+/// to the client to ask the client to create a work done progress.
 #[derive(Debug)]
 pub enum WorkDoneProgressCreate {}
 
@@ -771,34 +829,143 @@ impl Request for MonikerRequest {
     const METHOD: &'static str = "textDocument/moniker";
 }
 
-#[cfg(feature = "proposed")]
+/// The inlay hints request is sent from the client to the server to compute inlay hints for a given
+/// [text document, range] tuple that may be rendered in the editor in place with other text.
 pub enum InlayHintRequest {}
 
-#[cfg(feature = "proposed")]
 impl Request for InlayHintRequest {
     type Params = InlayHintParams;
     type Result = Option<Vec<InlayHint>>;
     const METHOD: &'static str = "textDocument/inlayHint";
 }
 
-#[cfg(feature = "proposed")]
+/// The `inlayHint/resolve` request is sent from the client to the server to resolve additional
+/// information for a given inlay hint. This is usually used to compute the tooltip, location or
+/// command properties of a inlay hint’s label part to avoid its unnecessary computation during the
+/// `textDocument/inlayHint` request.
 pub enum InlayHintResolveRequest {}
 
-#[cfg(feature = "proposed")]
 impl Request for InlayHintResolveRequest {
     type Params = InlayHint;
     type Result = InlayHint;
     const METHOD: &'static str = "inlayHint/resolve";
 }
 
-#[cfg(feature = "proposed")]
+/// The `workspace/inlayHint/refresh` request is sent from the server to the client. Servers can use
+/// it to ask clients to refresh the inlay hints currently shown in editors. As a result the client
+/// should ask the server to recompute the inlay hints for these editors. This is useful if a server
+/// detects a configuration change which requires a re-calculation of all inlay hints. Note that the
+/// client still has the freedom to delay the re-calculation of the inlay hints if for example an
+/// editor is currently not visible.
 pub enum InlayHintRefreshRequest {}
 
-#[cfg(feature = "proposed")]
 impl Request for InlayHintRefreshRequest {
     type Params = ();
     type Result = ();
     const METHOD: &'static str = "workspace/inlayHint/refresh";
+}
+
+/// The inline value request is sent from the client to the server to compute inline values for a
+/// given text document that may be rendered in the editor at the end of lines.
+pub enum InlineValueRequest {}
+
+impl Request for InlineValueRequest {
+    type Params = InlineValueParams;
+    type Result = Option<InlineValue>;
+    const METHOD: &'static str = "textDocument/inlineValue";
+}
+
+/// The `workspace/inlineValue/refresh` request is sent from the server to the client. Servers can
+/// use it to ask clients to refresh the inline values currently shown in editors. As a result the
+/// client should ask the server to recompute the inline values for these editors. This is useful if
+/// a server detects a configuration change which requires a re-calculation of all inline values.
+/// Note that the client still has the freedom to delay the re-calculation of the inline values if
+/// for example an editor is currently not visible.
+pub enum InlineValueRefreshRequest {}
+
+impl Request for InlineValueRefreshRequest {
+    type Params = ();
+    type Result = ();
+    const METHOD: &'static str = "workspace/inlineValue/refresh";
+}
+
+/// The text document diagnostic request is sent from the client to the server to ask the server to
+/// compute the diagnostics for a given document. As with other pull requests the server is asked
+/// to compute the diagnostics for the currently synced version of the document.
+#[derive(Debug)]
+pub enum DocumentDiagnosticRequest {}
+
+impl Request for DocumentDiagnosticRequest {
+    type Params = DocumentDiagnosticParams;
+    type Result = DocumentDiagnosticReportResult;
+    const METHOD: &'static str = "textDocument/diagnostic";
+}
+
+/// The workspace diagnostic request is sent from the client to the server to ask the server to
+/// compute workspace wide diagnostics which previously where pushed from the server to the client.
+/// In contrast to the document diagnostic request the workspace request can be long running and is
+/// not bound to a specific workspace or document state. If the client supports streaming for the
+/// workspace diagnostic pull it is legal to provide a document diagnostic report multiple times
+/// for the same document URI. The last one reported will win over previous reports.
+#[derive(Debug)]
+pub enum WorkspaceDiagnosticRequest {}
+
+impl Request for WorkspaceDiagnosticRequest {
+    type Params = WorkspaceDiagnosticParams;
+    const METHOD: &'static str = "workspace/diagnostic";
+    type Result = WorkspaceDiagnosticReportResult;
+}
+
+/// The `workspace/diagnostic/refresh` request is sent from the server to the client. Servers can
+/// use it to ask clients to refresh all needed document and workspace diagnostics. This is useful
+/// if a server detects a project wide configuration change which requires a re-calculation of all
+/// diagnostics.
+#[derive(Debug)]
+pub enum WorkspaceDiagnosticRefresh {}
+
+impl Request for WorkspaceDiagnosticRefresh {
+    type Params = ();
+    type Result = ();
+    const METHOD: &'static str = "workspace/diagnostic/refresh";
+}
+
+/// The type hierarchy request is sent from the client to the server to return a type hierarchy for
+/// the language element of given text document positions. Will return null if the server couldn’t
+/// infer a valid type from the position. The type hierarchy requests are executed in two steps:
+///
+/// 1. first a type hierarchy item is prepared for the given text document position.
+/// 2. for a type hierarchy item the supertype or subtype type hierarchy items are resolved.
+pub enum TypeHierarchyPrepare {}
+
+impl Request for TypeHierarchyPrepare {
+    type Params = TypeHierarchyPrepareParams;
+    type Result = Option<Vec<TypeHierarchyItem>>;
+    const METHOD: &'static str = "textDocument/prepareTypeHierarchy";
+}
+
+/// The `typeHierarchy/supertypes` request is sent from the client to the server to resolve the
+/// supertypes for a given type hierarchy item. Will return null if the server couldn’t infer a
+/// valid type from item in the params. The request doesn’t define its own client and server
+/// capabilities. It is only issued if a server registers for the
+/// `textDocument/prepareTypeHierarchy` request.
+pub enum TypeHierarchySupertypes {}
+
+impl Request for TypeHierarchySupertypes {
+    type Params = TypeHierarchySupertypesParams;
+    type Result = Option<Vec<TypeHierarchyItem>>;
+    const METHOD: &'static str = "typeHierarchy/supertypes";
+}
+
+/// The `typeHierarchy/subtypes` request is sent from the client to the server to resolve the
+/// subtypes for a given type hierarchy item. Will return null if the server couldn’t infer a valid
+/// type from item in the params. The request doesn’t define its own client and server capabilities.
+/// It is only issued if a server registers for the textDocument/prepareTypeHierarchy request.
+pub enum TypeHierarchySubtypes {}
+
+impl Request for TypeHierarchySubtypes {
+    type Params = TypeHierarchySubtypesParams;
+    type Result = Option<Vec<TypeHierarchyItem>>;
+    const METHOD: &'static str = "typeHierarchy/subtypes";
 }
 
 #[cfg(test)]
@@ -815,7 +982,7 @@ mod test {
 
     macro_rules! check_macro {
         ($name:tt) => {
-            // check whethe the macro name matches the method
+            // check whether the macro name matches the method
             assert_eq!(<lsp_request!($name) as Request>::METHOD, $name);
             // test whether type checking passes for each component
             fake_call::<lsp_request!($name)>();
@@ -860,27 +1027,39 @@ mod test {
         check_macro!("textDocument/moniker");
         check_macro!("textDocument/linkedEditingRange");
         check_macro!("textDocument/prepareCallHierarchy");
+        check_macro!("textDocument/prepareTypeHierarchy");
         check_macro!("textDocument/semanticTokens/full");
         check_macro!("textDocument/semanticTokens/full/delta");
         check_macro!("textDocument/semanticTokens/range");
+        check_macro!("textDocument/inlayHint");
+        check_macro!("textDocument/inlineValue");
+        check_macro!("textDocument/diagnostic");
 
         check_macro!("workspace/applyEdit");
         check_macro!("workspace/symbol");
         check_macro!("workspace/executeCommand");
         check_macro!("workspace/configuration");
+        check_macro!("workspace/diagnostic");
+        check_macro!("workspace/diagnostic/refresh");
         check_macro!("workspace/willCreateFiles");
         check_macro!("workspace/willRenameFiles");
         check_macro!("workspace/willDeleteFiles");
         check_macro!("workspace/workspaceFolders");
         check_macro!("workspace/semanticTokens/refresh");
         check_macro!("workspace/codeLens/refresh");
+        check_macro!("workspace/inlayHint/refresh");
+        check_macro!("workspace/inlineValue/refresh");
 
+        check_macro!("callHierarchy/incomingCalls");
+        check_macro!("callHierarchy/outgoingCalls");
         check_macro!("codeAction/resolve");
         check_macro!("codeLens/resolve");
         check_macro!("completionItem/resolve");
         check_macro!("documentLink/resolve");
-        check_macro!("callHierarchy/incomingCalls");
-        check_macro!("callHierarchy/outgoingCalls");
+        check_macro!("inlayHint/resolve");
+        check_macro!("typeHierarchy/subtypes");
+        check_macro!("typeHierarchy/supertypes");
+        check_macro!("workspaceSymbol/resolve");
     }
 
     #[test]

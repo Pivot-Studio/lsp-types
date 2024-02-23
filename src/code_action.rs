@@ -42,13 +42,13 @@ pub struct CodeActionClientCapabilities {
 
     /// Whether code action supports the `isPreferred` property.
     ///
-    /// since 3.15.0
+    /// @since 3.15.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_preferred_support: Option<bool>,
 
     /// Whether code action supports the `disabled` property.
     ///
-    /// since 3.16.0
+    /// @since 3.16.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disabled_support: Option<bool>,
 
@@ -56,14 +56,14 @@ pub struct CodeActionClientCapabilities {
     /// preserved between a `textDocument/codeAction` and a
     /// `codeAction/resolve` request.
     ///
-    /// since 3.16.0
+    /// @since 3.16.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data_support: Option<bool>,
 
     /// Whether the client supports resolving additional code action
     /// properties via a separate `codeAction/resolve` request.
     ///
-    /// since 3.16.0
+    /// @since 3.16.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolve_support: Option<CodeActionCapabilityResolveSupport>,
 
@@ -79,9 +79,9 @@ pub struct CodeActionClientCapabilities {
 }
 
 /// Whether the client supports resolving additional code action
-///  properties via a separate `codeAction/resolve` request.
+/// properties via a separate `codeAction/resolve` request.
 ///
-/// since 3.16.0
+/// @since 3.16.0
 #[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodeActionCapabilityResolveSupport {
@@ -137,8 +137,8 @@ pub enum CodeActionOrCommand {
 }
 
 impl From<Command> for CodeActionOrCommand {
-    fn from(comand: Command) -> Self {
-        CodeActionOrCommand::Command(comand)
+    fn from(command: Command) -> Self {
+        CodeActionOrCommand::Command(command)
     }
 }
 
@@ -203,6 +203,15 @@ impl CodeActionKind {
     pub const SOURCE_ORGANIZE_IMPORTS: CodeActionKind =
         CodeActionKind::new("source.organizeImports");
 
+    /// Base kind for a 'fix all' source action: `source.fixAll`.
+    ///
+    /// 'Fix all' actions automatically fix errors that have a clear fix that
+    /// do not require user input. They should not suppress errors or perform
+    /// unsafe fixes such as generating new types or classes.
+    ///
+    /// @since 3.17.0
+    pub const SOURCE_FIX_ALL: CodeActionKind = CodeActionKind::new("source.fixAll");
+
     pub const fn new(tag: &'static str) -> Self {
         CodeActionKind(Cow::Borrowed(tag))
     }
@@ -254,7 +263,7 @@ pub struct CodeAction {
     /// A quick fix should be marked preferred if it properly addresses the underlying error.
     /// A refactoring should be marked preferred if it is the most reasonable choice of actions to take.
     ///
-    /// since 3.15.0
+    /// @since 3.15.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_preferred: Option<bool>,
 
@@ -273,14 +282,14 @@ pub struct CodeAction {
     ///   actions are returned, the client should show the user an error message with `reason`
     ///   in the editor.
     ///
-    /// since 3.16.0
+    /// @since 3.16.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disabled: Option<CodeActionDisabled>,
 
     /// A data entry field that is preserved on a code action between
     /// a `textDocument/codeAction` and a `codeAction/resolve` request.
     ///
-    /// since 3.16.0
+    /// @since 3.16.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Value>,
 }
@@ -294,9 +303,29 @@ pub struct CodeActionDisabled {
     pub reason: String,
 }
 
+/// The reason why code actions were requested.
+///
+/// @since 3.17.0
+#[derive(Eq, PartialEq, Clone, Copy, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct CodeActionTriggerKind(i32);
+lsp_enum! {
+impl CodeActionTriggerKind {
+    /// Code actions were explicitly requested by the user or by an extension.
+    pub const INVOKED: CodeActionTriggerKind = CodeActionTriggerKind(1);
+
+    /// Code actions were requested automatically.
+    ///
+    /// This typically happens when current selection in a file changes, but can
+    /// also be triggered when file content changes.
+    pub const AUTOMATIC: CodeActionTriggerKind = CodeActionTriggerKind(2);
+}
+}
+
 /// Contains additional diagnostic information about the context in which
 /// a code action is run.
 #[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CodeActionContext {
     /// An array of diagnostics.
     pub diagnostics: Vec<Diagnostic>,
@@ -307,9 +336,15 @@ pub struct CodeActionContext {
     /// can omit computing them.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub only: Option<Vec<CodeActionKind>>,
+
+    /// The reason why code actions were requested.
+    ///
+    /// @since 3.17.0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trigger_kind: Option<CodeActionTriggerKind>,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CodeActionOptions {
     /// CodeActionKinds that this server may return.
@@ -325,7 +360,7 @@ pub struct CodeActionOptions {
     /// The server provides support to resolve additional
     /// information for a code action.
     ///
-    /// since 3.16.0
+    /// @since 3.16.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolve_provider: Option<bool>,
 }
